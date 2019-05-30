@@ -1,6 +1,7 @@
 import ByteBuffer from 'bytebuffer'
 import eventemitter2 from 'eventemitter2'
 import { default as PQueue } from 'p-queue'
+import * as busb from 'busb'
 
 import Device from './device'
 import Messages from './kkProto/messages_pb'
@@ -20,11 +21,11 @@ export default class WebUSBDevice extends Device {
   protected interface: Interface = 'StandardWebUSB'
 
   public static async requestPair (): Promise<USBDevice> {
-    if (!window.navigator.usb) {
-      throw new Error('WebUSB is not available in this browser. We recommend trying Chrome.')
+    if (busb.unsupported) {
+      throw new Error('USB is not available. If in browser, we recomend trying Chrome.')
     }
 
-    let device = await window.navigator.usb.requestDevice({
+    let device = await busb.usb.requestDevice({
       filters: [{
         vendorId: 0x2b24, productId: 0x0002 // WebUSB
       }, {
@@ -32,8 +33,9 @@ export default class WebUSBDevice extends Device {
       }]
     })
 
-    if (device.productId === 1)
-      throw new Error("Firmware v6.1.0 or later is required to use your keepkey with this client. Please update your device.")
+    if (device.productId === 1) {
+      throw new Error('Firmware v6.1.0 or later is required to use your keepkey with this client. Please update your device.')
+    }
 
     return device
   }
@@ -84,7 +86,7 @@ export default class WebUSBDevice extends Device {
   }
 
   public getEntropy (length: number = 64): Uint8Array {
-    return window.crypto.getRandomValues(new Uint8Array(length))
+    return crypto.getRandomValues(new Uint8Array(length))
   }
 
   // This must return a tuple of [returnedBuffer, entireBufferThatWasSent], concatenating if

@@ -107,7 +107,8 @@ export default abstract class Device {
   }
 
   protected fromMessageBuffer (buff: ByteBuffer): [number, jspb.Message] {
-    const dataView: any = buff.view
+    // Somehow `buff.view` is undefined. Change to `buff.buffer`
+    const dataView: any = buff.buffer
     const typeID = leByteArrayToLong(dataView.slice(3, 5))
     const MessageType = messageTypeRegistry[typeID] as any
     if (!MessageType) {

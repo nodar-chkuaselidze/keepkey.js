@@ -1,5 +1,6 @@
 import KeepKey from './keepkey'
 import eventemitter2 from 'eventemitter2'
+import * as busb from 'busb'
 import { WebUSBDeviceConfig } from './webUSBDevice'
 
 export type USBDeviceEventCallback = (deviceID: string) => void
@@ -22,9 +23,9 @@ export default class KeepKeyManager {
     this.onDisconnectCallback = config.onDisconnectCallback || defaultUSBDeviceCallback
 
     // If we have access to WebUSB, register callbacks
-    if (window.navigator.usb) {
-      window.navigator.usb.onconnect = this.handleConnectKeepKey.bind(this)
-      window.navigator.usb.ondisconnect = this.handleDisconnectKeepKey.bind(this)
+    if (!busb.unsupported) {
+      busb.usb.onconnect = this.handleConnectKeepKey.bind(this)
+      busb.usb.ondisconnect = this.handleDisconnectKeepKey.bind(this)
     }
   }
 
@@ -36,9 +37,9 @@ export default class KeepKeyManager {
     webusbConfig?: WebUSBDeviceConfig,
     devices?: USBDevice[]
   ): Promise<number> {
-    if (!window.navigator.usb) throw new Error('WebUSB not supported in your browser!')
+    if (busb.unsupported) throw new Error('WebUSB not supported !')
 
-    const devicesToInitialize = devices || await window.navigator.usb.getDevices()
+    const devicesToInitialize = devices || await busb.usb.getDevices()
 
     for (const usbDevice of devicesToInitialize) {
       if (this.keepkeys[usbDevice.serialNumber]) {
